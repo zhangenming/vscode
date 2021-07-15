@@ -8,10 +8,14 @@ import { raceCancellation } from 'vs/base/common/async';
 import { CancellationTokenSource } from 'vs/base/common/cancellation';
 import { Disposable, IDisposable } from 'vs/base/common/lifecycle';
 import { IDimension } from 'vs/editor/common/editorCommon';
+import { IReadonlyTextBuffer } from 'vs/editor/common/model';
+import { TokenizationRegistry } from 'vs/editor/common/modes';
+import { tokenizeToString } from 'vs/editor/common/modes/textToHtmlTokenizer';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { IOpenerService } from 'vs/platform/opener/common/opener';
 import { CellFocusMode, CodeCellRenderTemplate, IActiveNotebookEditor } from 'vs/workbench/contrib/notebook/browser/notebookBrowser';
 import { CellOutputContainer } from 'vs/workbench/contrib/notebook/browser/view/renderers/cellOutput';
+import { EditorTextRenderer } from 'vs/workbench/contrib/notebook/browser/view/renderers/cellRenderer';
 import { ClickTargetType } from 'vs/workbench/contrib/notebook/browser/view/renderers/cellWidgets';
 import { CodeCellViewModel } from 'vs/workbench/contrib/notebook/browser/viewModel/codeCellViewModel';
 import { INotebookCellStatusBarService } from 'vs/workbench/contrib/notebook/common/notebookCellStatusBarService';
@@ -240,6 +244,23 @@ export class CodeCell extends Disposable {
 		return true;
 	}
 
+	private getRichText2(buffer: IReadonlyTextBuffer, language: string) {
+		return tokenizeToString(buffer.getLineContent(1), TokenizationRegistry.get(language)!);
+	}
+
+	private updateInputCollaseElement(): void {
+		const lastElement = this.templateData.collapsedPart.lastElementChild as HTMLElement | undefined;
+		if (lastElement?.classList.contains('cell-collapse-preview')) {
+			lastElement.parentElement?.removeChild(lastElement);
+		}
+
+		const richEditorText = this.getRichText2(this.viewCell.textBuffer, this.viewCell.language);
+		const element = DOM.$('div');
+		element.classList.add('cell-collapse-preview');
+		DOM.safeInnerHtml(element, richEditorText);
+		this.templateData.collapsedPart.appendChild(element);
+	}
+
 	private viewUpdateInputCollapsed(): void {
 		DOM.hide(this.templateData.cellContainer);
 		DOM.hide(this.templateData.runButtonContainer);
@@ -247,6 +268,7 @@ export class CodeCell extends Disposable {
 		DOM.show(this.templateData.outputContainer);
 		this.templateData.container.classList.toggle('collapsed', true);
 		this._outputContainerRenderer.viewUpdateShowOutputs();
+		this.updateInputCollaseElement();
 
 		this.relayoutCell();
 	}
@@ -273,6 +295,7 @@ export class CodeCell extends Disposable {
 		this.templateData.container.classList.toggle('collapsed', true);
 		this.templateData.container.classList.toggle('output-collapsed', true);
 		this._outputContainerRenderer.viewUpdateHideOuputs();
+		this.updateInputCollaseElement();
 		this.relayoutCell();
 	}
 

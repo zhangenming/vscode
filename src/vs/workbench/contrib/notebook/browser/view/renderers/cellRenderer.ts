@@ -19,7 +19,7 @@ import * as platform from 'vs/base/common/platform';
 import { ICodeEditor } from 'vs/editor/browser/editorBrowser';
 import { CodeEditorWidget } from 'vs/editor/browser/widget/codeEditorWidget';
 import { EditorOption, IEditorOptions } from 'vs/editor/common/config/editorOptions';
-import { BareFontInfo } from 'vs/editor/common/config/fontInfo';
+import { BareFontInfo, FontInfo } from 'vs/editor/common/config/fontInfo';
 import { Range } from 'vs/editor/common/core/range';
 import { EditorContextKeys } from 'vs/editor/common/editorContextKeys';
 import { ITextModel } from 'vs/editor/common/model';
@@ -553,20 +553,18 @@ export class MarkupCellRenderer extends AbstractCellRenderer implements IListRen
 	}
 }
 
-class EditorTextRenderer {
+export class EditorTextRenderer {
 
 	private static _ttPolicy = window.trustedTypes?.createPolicy('cellRendererEditorText', {
 		createHTML(input) { return input; }
 	});
 
-	getRichText(editor: ICodeEditor, modelRange: Range): HTMLElement | null {
-		const model = editor.getModel();
+	getRichText(model: ITextModel | null, fontInfo: FontInfo, modelRange: Range): HTMLElement | null {
 		if (!model) {
 			return null;
 		}
 
 		const colorMap = this.getDefaultColorMap();
-		const fontInfo = editor.getOptions().get(EditorOption.fontInfo);
 		const fontFamilyVar = '--notebook-editor-font-family';
 		const fontSizeVar = '--notebook-editor-font-size';
 		const fontWeightVar = '--notebook-editor-font-weight';
@@ -653,7 +651,7 @@ class CodeCellDragImageRenderer {
 			return null;
 		}
 
-		const richEditorText = new EditorTextRenderer().getRichText(editor, new Range(1, 1, 1, 1000));
+		const richEditorText = new EditorTextRenderer().getRichText(editor.getModel(), editor.getOptions().get(EditorOption.fontInfo), new Range(1, 1, 1, 1000));
 		if (!richEditorText) {
 			return null;
 		}
