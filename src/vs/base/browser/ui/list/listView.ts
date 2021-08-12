@@ -389,7 +389,7 @@ export class ListView<T> implements ISpliceable<T>, IDisposable {
 		this.scrollableElement.triggerScrollFromMouseWheelEvent(browserEvent);
 	}
 
-	updateElementHeight(index: number, size: number, anchorIndex: number | null): void {
+	updateElementHeight(index: number, size: number, anchorIndex: number | null, callback?: () => void): void {
 		if (index < 0 || index >= this.items.length) {
 			return;
 		}
@@ -419,6 +419,9 @@ export class ListView<T> implements ISpliceable<T>, IDisposable {
 		this.items[index].size = size;
 
 		this.render(lastRenderRange, Math.max(0, this.lastRenderTop + heightDiff), this.lastRenderHeight, undefined, undefined, true);
+		if (callback) {
+			callback();
+		}
 		this.setScrollTop(this.lastRenderTop);
 
 		this.eventuallyUpdateScrollDimensions();
@@ -734,6 +737,8 @@ export class ListView<T> implements ISpliceable<T>, IDisposable {
 			this.rowsContainer.style.left = `-${renderLeft}px`;
 		}
 
+		const date = new Date();
+		console.log('update render top', date.getSeconds(), date.getMilliseconds(), `-${renderTop}px`);
 		this.rowsContainer.style.top = `-${renderTop}px`;
 
 		if (this.horizontalScrolling && scrollWidth !== undefined) {

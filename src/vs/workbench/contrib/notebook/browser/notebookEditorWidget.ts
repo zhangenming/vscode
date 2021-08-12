@@ -2419,7 +2419,10 @@ export class NotebookEditorWidget extends Disposable implements INotebookEditor 
 				this.notebookRendererMessaging.prepare(output.renderer.id);
 			}
 
-			const cellTop = this._list.getAbsoluteTopOfElement(cell);
+			const webviewTop = parseInt((this._list.rowsContainer.firstChild as HTMLElement).style.top, 10);
+			const top = !!webviewTop ? (0 - webviewTop) : 0;
+
+			const cellTop = this._list.getAbsoluteTopOfElement(cell) + top;
 			if (!this._webview.insetMapping.has(output.source)) {
 				await this._webview.createOutput({ cellId: cell.id, cellHandle: cell.handle, cellUri: cell.uri }, output, cellTop, offset);
 			} else {
@@ -2508,6 +2511,9 @@ export class NotebookEditorWidget extends Disposable implements INotebookEditor 
 		const scrollHeight = this._list.scrollHeight;
 		this._webview!.element.style.height = `${scrollHeight}px`;
 
+		const webviewTop = parseInt((this._list.rowsContainer.firstChild as HTMLElement).style.top, 10);
+		const top = !!webviewTop ? (0 - webviewTop) : 0;
+
 		const updateItems: IDisplayOutputLayoutUpdateRequest[] = [];
 		const removedItems: ICellOutputViewModel[] = [];
 		this._webview?.insetMapping.forEach((value, key) => {
@@ -2534,7 +2540,7 @@ export class NotebookEditorWidget extends Disposable implements INotebookEditor 
 			updateItems.push({
 				cell,
 				output: key,
-				cellTop,
+				cellTop: cellTop + top,
 				outputOffset,
 				forceDisplay: false,
 			});
@@ -2547,12 +2553,13 @@ export class NotebookEditorWidget extends Disposable implements INotebookEditor 
 			const cell = this.viewModel?.viewCells.find(cell => cell.id === cellId);
 			if (cell) {
 				const cellTop = this._list.getAbsoluteTopOfElement(cell);
-				markdownUpdateItems.push({ id: cellId, top: cellTop });
+				markdownUpdateItems.push({ id: cellId, top: cellTop + top });
 			}
 		}
 
 		if (markdownUpdateItems.length || updateItems.length) {
 			this._debug('_list.onDidChangeContentHeight/markdown', markdownUpdateItems);
+			console.log(updateItems, markdownUpdateItems);
 			this._webview?.updateScrollTops(updateItems, markdownUpdateItems);
 		}
 	}
