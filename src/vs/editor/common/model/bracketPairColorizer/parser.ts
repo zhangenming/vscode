@@ -14,8 +14,8 @@ import { Tokenizer, TokenKind } from './tokenizer';
 /**
  * Non incrementally built ASTs are immutable.
 */
-export function parseDocument(tokenizer: Tokenizer, edits: TextEditInfo[], oldNode: AstNode | undefined, denseKeyProvider: DenseKeyProvider<number>, immutable: boolean): AstNode {
-	const parser = new Parser(tokenizer, edits, oldNode, denseKeyProvider, immutable);
+export function parseDocument(tokenizer: Tokenizer, edits: TextEditInfo[], oldNode: AstNode | undefined, denseKeyProvider: DenseKeyProvider<number>, createImmutableLists: boolean): AstNode {
+	const parser = new Parser(tokenizer, edits, oldNode, denseKeyProvider, createImmutableLists);
 	return parser.parseDocument();
 }
 
@@ -47,9 +47,9 @@ class Parser {
 		edits: TextEditInfo[],
 		oldNode: AstNode | undefined,
 		private readonly denseKeyProvider: DenseKeyProvider<number>,
-		private readonly immutable: boolean,
+		private readonly createImmutableLists: boolean,
 	) {
-		if (oldNode && immutable) {
+		if (oldNode && createImmutableLists) {
 			throw new Error('Not supported');
 		}
 
@@ -93,7 +93,7 @@ class Parser {
 		}
 
 		// When there is no oldNodeReader, all items are created from scratch and must have the same height.
-		const result = this.oldNodeReader ? concat23Trees(items) : concat23TreesOfSameHeight(items, this.immutable);
+		const result = this.oldNodeReader ? concat23Trees(items) : concat23TreesOfSameHeight(items, this.createImmutableLists);
 		return result;
 	}
 

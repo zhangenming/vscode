@@ -61,7 +61,7 @@ export function concat23Trees(items: AstNode[]): AstNode | null {
 	return result;
 }
 
-export function concat23TreesOfSameHeight(items: AstNode[], immutable: boolean = false): AstNode | null {
+export function concat23TreesOfSameHeight(items: AstNode[], createImmutableLists: boolean = false): AstNode | null {
 	if (items.length === 0) {
 		return null;
 	}
@@ -77,12 +77,12 @@ export function concat23TreesOfSameHeight(items: AstNode[], immutable: boolean =
 		const newItems = new Array<AstNode>(newLength);
 		for (let i = 0; i < newLength; i++) {
 			const j = i << 1;
-			newItems[i] = ListAstNode.create(items.slice(j, (j + 3 === length) ? length : j + 2), immutable);
+			newItems[i] = ListAstNode.create(items.slice(j, (j + 3 === length) ? length : j + 2), createImmutableLists);
 		}
 		length = newLength;
 		items = newItems;
 	}
-	return ListAstNode.create(items, immutable);
+	return ListAstNode.create(items, createImmutableLists);
 }
 
 function heightDiff(node1: AstNode, node2: AstNode): number {
