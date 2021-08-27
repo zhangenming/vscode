@@ -11,11 +11,17 @@ import { concat23Trees, concat23TreesOfSameHeight } from './concat23Trees';
 import { NodeReader } from './nodeReader';
 import { Tokenizer, TokenKind } from './tokenizer';
 
-export function parseDocument(tokenizer: Tokenizer, edits: TextEditInfo[], oldNode: AstNode | undefined, denseKeyProvider: DenseKeyProvider<number>): AstNode {
-	const parser = new Parser(tokenizer, edits, oldNode, denseKeyProvider);
+/**
+ * Non incrementally built ASTs are immutable.
+*/
+export function parseDocument(tokenizer: Tokenizer, edits: TextEditInfo[], oldNode: AstNode | undefined, denseKeyProvider: DenseKeyProvider<number>, immutable: boolean): AstNode {
+	const parser = new Parser(tokenizer, edits, oldNode, denseKeyProvider, immutable);
 	return parser.parseDocument();
 }
 
+/**
+ * Non incrementally built ASTs are immutable.
+*/
 class Parser {
 	private readonly oldNodeReader?: NodeReader;
 	private readonly positionMapper: BeforeEditPositionMapper;
@@ -41,7 +47,12 @@ class Parser {
 		edits: TextEditInfo[],
 		oldNode: AstNode | undefined,
 		private readonly denseKeyProvider: DenseKeyProvider<number>,
+		private readonly immutable: boolean,
 	) {
+		if (oldNode && immutable) {
+			throw new Error('Not supported');
+		}
+
 		this.oldNodeReader = oldNode ? new NodeReader(oldNode) : undefined;
 		this.positionMapper = new BeforeEditPositionMapper(edits, tokenizer.length);
 	}
@@ -52,7 +63,7 @@ class Parser {
 
 		let result = this.parseList(SmallImmutableSet.getEmpty());
 		if (!result) {
-			result = ListAstNode.create([]);
+			result = ListAstNode.create([], true);
 		}
 
 		return result;
@@ -74,7 +85,7 @@ class Parser {
 			}
 
 			const child = this.parseChild(expectedClosingCategories);
-			if (child.kind === AstNodeKind.List && child.children.length === 0) {
+			if (child.kind === AstNodeKind.List && child.childrenFast.length === 0) {
 				continue;
 			}
 
@@ -82,7 +93,7 @@ class Parser {
 		}
 
 		// When there is no oldNodeReader, all items are created from scratch and must have the same height.
-		const result = this.oldNodeReader ? concat23Trees(items) : concat23TreesOfSameHeight(items);
+		const result = this.oldNodeReader ? concat23Trees(items) : concat23TreesOfSameHeight(items, this.immutable);
 		return result;
 	}
 
